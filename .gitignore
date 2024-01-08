@@ -163,3 +163,5 @@ data
 *.npz
 models
 .DS_Store
+reconstructions
+samples.png
