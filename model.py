@@ -13,8 +13,25 @@ def upsample_nearest(x, scale: int = 2):
     B, H, W, C = x.shape
     x = mx.broadcast_to(x[:, :, None, :, None, :], (B, H, scale, W, scale, C))
     x = x.reshape(B, H * scale, W * scale, C)
-
     return x
+
+
+class UpsamplingConv2d(nn.Module):
+    """
+    A convolutional layer that upsamples the input by a factor of 2. MLX does not yet
+    support transposed convolutions, so we approximate them with nearest neighbor upsampling
+    followed by a convolution. This is similar to the approach used in the original U-Net.
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
+        super().__init__()
+        self.conv = nn.Conv2d(
+            in_channels, out_channels, kernel_size, stride=stride, padding=padding
+        )
+
+    def __call__(self, x):
+        x = self.conv(upsample_nearest(x))
+        return x
 
 
 class Encoder(nn.Module):
@@ -38,33 +55,23 @@ class Encoder(nn.Module):
         self.num_img_channels = num_img_channels
         self.max_num_filters = max_num_filters
 
-        # we assume B x #img_channels x 64 x 64 input
+        # we assume B x 64 x 64 x #img_channels input
         # Todo: add input shape attribute to the model to make it more flexible
 
-        # C x H x W
-        img_input_shape = (num_img_channels, 64, 64)
+        # HWC
+        img_input_shape = (64, 64, num_img_channels)
 
-        # layers (with max_num_filters=128)
-
+        # number of filters in the convolutional layers
         num_filters_1 = max_num_filters // 4
         num_filters_2 = max_num_filters // 2
         num_filters_3 = max_num_filters
 
-        # print(f"Encoder: ")
-        # print(f"  num_filters_1={num_filters_1}")
-        # print(f"  num_filters_2={num_filters_2}")
-        # print(f"  num_filters_3={num_filters_3}")
-
-        # Output: num_filters_1 x 32 x 32
+        # Output (BHWC):  B x 32 x 32 x num_filters_1
         self.conv1 = nn.Conv2d(num_img_channels, num_filters_1, 3, stride=2, padding=1)
-        # Output: num_filters_2 x 16 x 16
+        # Output (BHWC):  B x 16 x 16 x num_filters_2
         self.conv2 = nn.Conv2d(num_filters_1, num_filters_2, 3, stride=2, padding=1)
-        # Output: num_filters_3 x 8 x 8
+        # Output (BHWC):  B x 8 x 8 x num_filters_3
         self.conv3 = nn.Conv2d(num_filters_2, num_filters_3, 3, stride=2, padding=1)
-
-        # Shortcuts
-        self.shortcut2 = nn.Conv2d(num_filters_1, num_filters_2, 1, stride=2, padding=0)
-        self.shortcut3 = nn.Conv2d(num_filters_2, num_filters_3, 1, stride=2, padding=0)
 
         # Batch Normalizations
         self.bn1 = nn.BatchNorm(num_filters_1)
@@ -81,7 +88,7 @@ class Encoder(nn.Module):
 
         # divide the last two dimensions by 8 because of the 3 strided convolutions
         output_shape = [num_filters_3] + [
-            dimension // 8 for dimension in img_input_shape[1:]
+            dimension // 8 for dimension in img_input_shape[:-1]
         ]
 
         flattened_dim = math.prod(output_shape)
@@ -111,7 +118,7 @@ class Encoder(nn.Module):
         # with mean mu and standard deviation sigma. Backpropagation is possible
         # because the gradients of the random values are just 1 and the gradients
         # of the linear transformation are just the weights of the linear transformation.
-        # z = eps.mul(sigma).add_(mu)
+
         z = eps * sigma + mu
 
         # compute KL divergence
@@ -135,28 +142,29 @@ class Decoder(nn.Module):
         num_filters_2 = max_num_filters // 2
         num_filters_3 = max_num_filters // 4
 
-        # print(f"Decoder: ")
-        # print(f"  num_filters_1={num_filters_1}")
-        # print(f"  num_filters_2={num_filters_2}")
-        # print(f"  num_filters_3={num_filters_3}")
+        # HWC
+        img_output_shape = (64, 64, self.num_img_channels)
 
-        # C x H x W
-        img_output_shape = (num_img_channels, 64, 64)
-
-        # divide the last two dimensions by 8 because of the 3 strided convolutions
-        self.input_shape = [num_filters_1] + [
-            dimension // 8 for dimension in img_output_shape[1:]
+        # divide the last two dimensions by 8 because of the 3 upsampling convolutions
+        self.input_shape = [dimension // 8 for dimension in img_output_shape[:-1]] + [
+            num_filters_1
         ]
         flattened_dim = math.prod(self.input_shape)
 
         # Output: flattened_dim
         self.lin1 = nn.Linear(num_latent_dims, flattened_dim)
-        # Output: num_filters_2 x 16 x 16 (with upsample_nearest)
-        self.conv1 = nn.Conv2d(num_filters_1, num_filters_2, 3, stride=1, padding=1)
-        # Output: num_filters_1 x 32 x 32 (with upsample_nearest)
-        self.conv2 = nn.Conv2d(num_filters_2, num_filters_3, 3, stride=1, padding=1)
-        # Output: #img_channels x 64 x 64 (with upsample_nearest)
-        self.conv3 = nn.Conv2d(num_filters_3, num_img_channels, 3, stride=1, padding=1)
+        # Output (BHWC):  B x 16 x 16 x num_filters_2
+        self.conv1 = UpsamplingConv2d(
+            num_filters_1, num_filters_2, 3, stride=1, padding=1
+        )
+        # Output (BHWC):  B x 32 x 32 x num_filters_1
+        self.conv2 = UpsamplingConv2d(
+            num_filters_2, num_filters_3, 3, stride=1, padding=1
+        )
+        # Output (BHWC):  B x 64 x 64 x #img_channels
+        self.conv3 = UpsamplingConv2d(
+            num_filters_3, num_img_channels, 3, stride=1, padding=1
+        )
 
         # Batch Normalizations
         self.bn1 = nn.BatchNorm(num_filters_2)
@@ -164,17 +172,18 @@ class Decoder(nn.Module):
 
     def __call__(self, z):
         # unflatten the latent vector
-        x = self.lin1(z)
+        x = self.lin1(z)        
+
+        # reshape to BHWC
         x = x.reshape(
-            -1, self.input_shape[-2], self.input_shape[-1], self.max_num_filters
+            -1, self.input_shape[0], self.input_shape[1], self.max_num_filters
         )
 
         # approximate transposed convolutions with nearest neighbor upsampling
-        x = nn.relu(self.bn1(self.conv1(upsample_nearest(x))))
-        x = nn.relu(self.bn2(self.conv2(upsample_nearest(x))))
-        x = mx.sigmoid(
-            self.conv3(upsample_nearest(x))
-        )  # sigmoid to ensure pixel values are in [0,1]
+        x = nn.relu(self.bn1(self.conv1(x)))
+        x = nn.relu(self.bn2(self.conv2(x)))
+        x = mx.sigmoid(self.conv3(x))  # sigmoid to ensure pixel values are in [0,1]
+
         return x
 
 
