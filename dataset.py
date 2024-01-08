@@ -35,8 +35,8 @@ def mnist(batch_size, img_size, root=None):
     # iterator over training set
     test_iter = (
         test.to_stream()
-         .image_resize("image", h=img_size[0], w=img_size[1])
-        .key_transform("image", normalize)       
+        .image_resize("image", h=img_size[0], w=img_size[1])
+        .key_transform("image", normalize)
         .batch(batch_size)
     )
     return tr_iter, test_iter, num_img_channels
@@ -44,7 +44,7 @@ def mnist(batch_size, img_size, root=None):
 
 if __name__ == "__main__":
     batch_size = 32
-    img_size = (64, 64)  # (H,W)
+    img_size = (64, 64)  # (H, W)
 
     tr_iter, test_iter, num_img_channels = mnist(
         batch_size=batch_size, img_size=img_size

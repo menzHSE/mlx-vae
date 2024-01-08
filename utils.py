@@ -1,7 +1,8 @@
 import math
 import os
-import numpy as np
+
 import mlx.core as mx
+import numpy as np
 from PIL import Image
 
 
@@ -20,7 +21,7 @@ def gen_grid_image_from_batch(image_batch, num_rows, norm_factor=255, dtype=np.u
     grid_width = num_cols * W
 
     # Normalize and convert to the desired data type
-    image_batch = (image_batch * norm_factor).astype(dtype)
+    image_batch = np.array(image_batch * norm_factor).astype(dtype)
 
     # Reshape the batch of images into a 2D grid
     grid_image = image_batch.reshape(num_rows, num_cols, H, W, -1)
@@ -32,7 +33,6 @@ def gen_grid_image_from_batch(image_batch, num_rows, norm_factor=255, dtype=np.u
 
 
 def combine_and_save_image(img1_data, img2_data, fname):
-
     # Convert numpy arrays to Pillow images
     pimg1 = Image.fromarray(img1_data.squeeze())
     pimg2 = Image.fromarray(img2_data.squeeze())

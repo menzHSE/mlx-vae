@@ -8,8 +8,8 @@ import mlx.optimizers as optim
 import numpy as np
 
 import dataset
-import model
 import loss
+import model
 import utils
 
 
@@ -110,7 +110,7 @@ def train(batch_size, num_epochs, learning_rate, num_latent_dims, max_num_filter
         )
 
         # save model
-       
+
         save_model(vae, fname_save_every_epoch, e)
 
 

@@ -1,12 +1,11 @@
 # Markus Enzweiler - markus.enzweiler@hs-esslingen.de
 
-import os
 import math
+import os
+
 import mlx.core as mx
 import mlx.nn as nn
 from mlx.utils import tree_flatten
-
-import utils
 
 
 # from https://github.com/ml-explore/mlx-examples/blob/main/stable_diffusion/stable_diffusion/unet.py
@@ -112,12 +111,12 @@ class Encoder(nn.Module):
         # with mean mu and standard deviation sigma. Backpropagation is possible
         # because the gradients of the random values are just 1 and the gradients
         # of the linear transformation are just the weights of the linear transformation.
-        #z = eps.mul(sigma).add_(mu)
+        # z = eps.mul(sigma).add_(mu)
         z = eps * sigma + mu
 
         # compute KL divergence
         # see Appendix B from VAE paper:    https://arxiv.org/abs/1312.6114
-        self.kl_div = -0.5 * mx.sum(1 + logvar - mu*mu - logvar.exp())
+        self.kl_div = -0.5 * mx.sum(1 + logvar - mu * mu - logvar.exp())
         return z  # return latent vector
 
 
@@ -153,17 +152,11 @@ class Decoder(nn.Module):
         # Output: flattened_dim
         self.lin1 = nn.Linear(num_latent_dims, flattened_dim)
         # Output: num_filters_2 x 16 x 16 (with upsample_nearest)
-        self.conv1 = nn.Conv2d(
-            num_filters_1, num_filters_2, 3, stride=1, padding=1
-        )
+        self.conv1 = nn.Conv2d(num_filters_1, num_filters_2, 3, stride=1, padding=1)
         # Output: num_filters_1 x 32 x 32 (with upsample_nearest)
-        self.conv2 = nn.Conv2d(
-            num_filters_2, num_filters_3, 3, stride=1, padding=1
-        )
+        self.conv2 = nn.Conv2d(num_filters_2, num_filters_3, 3, stride=1, padding=1)
         # Output: #img_channels x 64 x 64 (with upsample_nearest)
-        self.conv3 = nn.Conv2d(
-            num_filters_3, num_img_channels, 3, stride=1, padding=1
-        )
+        self.conv3 = nn.Conv2d(num_filters_3, num_img_channels, 3, stride=1, padding=1)
 
         # Batch Normalizations
         self.bn1 = nn.BatchNorm(num_filters_2)
@@ -172,12 +165,16 @@ class Decoder(nn.Module):
     def __call__(self, z):
         # unflatten the latent vector
         x = self.lin1(z)
-        x = x.reshape(-1, self.input_shape[-2], self.input_shape[-1], self.max_num_filters)
+        x = x.reshape(
+            -1, self.input_shape[-2], self.input_shape[-1], self.max_num_filters
+        )
 
-        # approximate transposed convolutions with nearest neighbor upsampling      
+        # approximate transposed convolutions with nearest neighbor upsampling
         x = nn.relu(self.bn1(self.conv1(upsample_nearest(x))))
         x = nn.relu(self.bn2(self.conv2(upsample_nearest(x))))
-        x = mx.sigmoid(self.conv3(upsample_nearest(x)))  # sigmoid to ensure pixel values are in [0,1]
+        x = mx.sigmoid(
+            self.conv3(upsample_nearest(x))
+        )  # sigmoid to ensure pixel values are in [0,1]
         return x
 
 

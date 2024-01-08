@@ -1,18 +1,15 @@
-
 import argparse
 
-import numpy as np
-
 import mlx.core as mx
-import mlx.nn as nn
+import numpy as np
 
 import dataset
 import model
 import utils
 
 
-def reconstruct(   
-    model_fname,   
+def reconstruct(
+    model_fname,
     num_latent_dims,
     max_num_filters,
     rec_testdata,
@@ -40,20 +37,17 @@ def reconstruct(
     vae.load(model_fname)
     print(f"Loaded model with {num_latent_dims} latent dims from {model_fname}")
 
-  
     # set model to eval mode
     vae.eval()
 
     # loop over data and reconstruct
-   
+
     img_count = 0
-    img_path = (
-        f"./{outdir}/mnist_{suffix}/{num_latent_dims:04d}_latent_dims/img_"
-    )
+    img_path = f"./{outdir}/mnist_{suffix}/{num_latent_dims:04d}_latent_dims/img_"
     utils.ensure_folder_exists(img_path)
 
     for batch_count, batch in enumerate(data_iter):
-        images = mx.array(batch["image"])  
+        images = mx.array(batch["image"])
 
         # reconstruct the images
         images_recon = vae(images)
@@ -98,7 +92,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Reconstruct test split instead of training split",
     )
-   
+
     parser.add_argument(
         "--latent_dims",
         type=int,
@@ -128,8 +122,8 @@ if __name__ == "__main__":
     else:
         print("Reconstructing test data")
 
-    reconstruct(      
-        args.model,     
+    reconstruct(
+        args.model,
         args.latent_dims,
         args.max_filters,
         args.rec_testdata,
