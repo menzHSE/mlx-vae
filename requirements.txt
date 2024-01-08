@@ -1,0 +1,4 @@
+mlx
+mlx-data
+numpy
+Pillow
