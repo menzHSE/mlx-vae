@@ -77,9 +77,7 @@ def reconstruct(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        "Reconstruct data samples using a VAE with PyTorch."
-    )
+    parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--cpu",

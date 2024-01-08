@@ -1,7 +1,7 @@
 import argparse
 
-import numpy as np
 import mlx.core as mx
+import numpy as np
 
 import model
 import utils
@@ -15,7 +15,6 @@ def generate(
     num_samples,
     outfile,
 ):
-    
     # Load the model
     vae = model.CVAE(num_latent_dims, num_img_channels, max_num_filters)
     vae.load(model_fname)
@@ -34,8 +33,7 @@ def generate(
     z = mx.random.normal([num_samples, num_latent_dims])
 
     # generate images from the latent vectors
-    images = vae.decode(z)   
-   
+    images = vae.decode(z)
 
     print(images.shape)
 
@@ -46,7 +44,7 @@ def generate(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Generate samples from a VAE with PyTorch.")
+    parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--cpu",

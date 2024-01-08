@@ -115,7 +115,7 @@ def train(batch_size, num_epochs, learning_rate, num_latent_dims, max_num_filter
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Train a convolutional VAE with mlx.")
+    parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--cpu",
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument(
-        "--batchsize", type=int, default=32, help="Batch size for training"
+        "--batchsize", type=int, default=64, help="Batch size for training"
     )
     parser.add_argument(
         "--max_filters",
@@ -136,17 +136,11 @@ if __name__ == "__main__":
         "--epochs", type=int, default=100, help="Number of training epochs"
     )
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        choices=["mnist", "fashion-mnist", "cifar-10", "cifar-100", "celeb-a"],
-        default="mnist",
-        help="Select the dataset to use (mnist, fashion-mnist, cifar-10, cifar-100, celeb-a)",
-    )
+
     parser.add_argument(
         "--latent_dims",
         type=int,
-        required=True,
+        default=64,
         help="Number of latent dimensions (positive integer)",
     )
 
@@ -165,7 +159,6 @@ if __name__ == "__main__":
     print(f"  Max number of filters: {args.max_filters}")
     print(f"  Number of epochs: {args.epochs}")
     print(f"  Learning rate: {args.lr}")
-    print(f"  Dataset: {args.dataset}")
     print(f"  Number of latent dimensions: {args.latent_dims}")
 
     train(args.batchsize, args.epochs, args.lr, args.latent_dims, args.max_filters)
