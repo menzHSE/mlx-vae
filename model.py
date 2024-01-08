@@ -172,7 +172,7 @@ class Decoder(nn.Module):
 
     def __call__(self, z):
         # unflatten the latent vector
-        x = self.lin1(z)        
+        x = self.lin1(z)
 
         # reshape to BHWC
         x = x.reshape(
