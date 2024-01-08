@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_filters",
         type=int,
-        default=128,
+        default=64,
         help="Maximum number of filters in the convolutional layers",
     )
     parser.add_argument(
