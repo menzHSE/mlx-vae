@@ -21,7 +21,7 @@ def reconstruct(
     # Image size
     img_size = (64, 64)
 
-    # get the data
+    # Get the data
     tr_iter, test_iter, num_img_channels = dataset.mnist(
         batch_size=batch_size, img_size=img_size
     )
@@ -40,13 +40,12 @@ def reconstruct(
     # set model to eval mode
     vae.eval()
 
-    # loop over data and reconstruct
-
+    # Loop over data and reconstruct
     img_count = 0
     img_path = f"./{outdir}/mnist_{suffix}/{num_latent_dims:04d}_latent_dims/img_"
     utils.ensure_folder_exists(img_path)
 
-    for batch_count, batch in enumerate(data_iter):
+    for _, batch in enumerate(data_iter):
         images = mx.array(batch["image"])
 
         # reconstruct the images
@@ -57,11 +56,11 @@ def reconstruct(
             img1 = images[j]
             img2 = images_recon[j]
 
-            # Convert MLX tensors to numpy arrays and scale to 0-255
+            # Convert mlx arrays to numpy arrays and scale to 0-255
             img1_data = np.array(img1 * 255).astype(np.uint8)
             img2_data = np.array(img2 * 255).astype(np.uint8)
 
-            # filenames for image and reconstructed image
+            # filename for image and reconstructed image
             img_fname = f"{img_path}{(img_count+j):08d}.png"
             utils.combine_and_save_image(img1_data, img2_data, img_fname)
 

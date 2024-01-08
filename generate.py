@@ -23,21 +23,18 @@ def generate(
     # set model to eval mode
     vae.eval()
 
-    # generate samples
+    # Generate a batch of random latent vectors.
 
-    # generate a batch of random latent vector
-
-    # during training we have made sure that the distribution in latent
-    # space remains close to a normal distribution
+    # During training we have made sure that the distribution in latent
+    # space remains close to a normal distribution, so we can sample
+    # from a normal distribution to generate new images.
 
     z = mx.random.normal([num_samples, num_latent_dims])
 
-    # generate images from the latent vectors
+    # Generate images from the latent vectors via the decoder
     images = vae.decode(z)
 
-    print(images.shape)
-
-    # save all images in a single file
+    # Save all images in a single file
     grid_image = utils.gen_grid_image_from_batch(images, num_rows=4)
     grid_image.save(outfile)
     print(f"Saved {num_samples} generated images to {outfile}")

@@ -51,9 +51,9 @@ def train_epoch(model, tr_iter, loss_and_grad_fn, optimizer, epoch):
 
         if batch_count > 0 and (batch_count % 10 == 0):
             print(
-                f"Epoch {epoch:4d}: Loss {(running_loss.item() / batch_count):6.5f} | "
-                f"Batch {batch_count:5d} | "
-                f"Throughput {throughput:10.2f} images/second",
+                f"Epoch {epoch:4d}: Loss {(running_loss.item() / batch_count):10.2f} | "
+                f"Throughput {throughput:8.2f} im/s | ",
+                f"Batch {batch_count:5d}",
                 end="\r",
             )
 
@@ -98,19 +98,17 @@ def train(batch_size, num_epochs, learning_rate, num_latent_dims, max_num_filter
         )
         toc = time.perf_counter()
 
-        # reset iterators
-        tr_iter.reset()
+        # calculate throughput
         samples_per_sec = mx.mean(mx.array(throughput_list))
 
         # print stats
         print(
-            f"Epoch {e:4d}: Loss {(running_loss.item() / batch_count):6.5f} | "
-            f"Throughput {samples_per_sec.item():10.2f} images/second | ",
-            f"Time {toc - tic:8.3f} (s)",
+            f"Epoch {e:4d}: Loss {(running_loss.item() / batch_count):10.2f} | "
+            f"Throughput {samples_per_sec.item():8.2f} im/s | ",
+            f"Time {toc - tic:8.1f} (s)",
         )
 
-        # save model
-
+        # save model in every epoch
         save_model(vae, fname_save_every_epoch, e)
 
 
@@ -124,7 +122,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument(
-        "--batchsize", type=int, default=64, help="Batch size for training"
+        "--batchsize", type=int, default=128, help="Batch size for training"
     )
     parser.add_argument(
         "--max_filters",
@@ -140,7 +138,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--latent_dims",
         type=int,
-        default=64,
+        default=8,
         help="Number of latent dimensions (positive integer)",
     )
 
