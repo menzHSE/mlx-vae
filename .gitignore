@@ -160,7 +160,6 @@ cython_debug/
 #.idea/
 data
 *.code-workspace
-*.npz
 models
 .DS_Store
 reconstructions
