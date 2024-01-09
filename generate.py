@@ -12,7 +12,6 @@ def generate(
     num_latent_dims,
     num_img_channels,
     max_num_filters,
-    num_samples,
     outfile,
 ):
     # Load the model
@@ -24,18 +23,18 @@ def generate(
     vae.eval()
 
     # Generate a batch of random latent vectors.
+    num_samples = 128
 
     # During training we have made sure that the distribution in latent
     # space remains close to a normal distribution, so we can sample
     # from a normal distribution to generate new images.
-
     z = mx.random.normal([num_samples, num_latent_dims])
 
     # Generate images from the latent vectors via the decoder
     images = vae.decode(z)
 
     # Save all images in a single file
-    grid_image = utils.gen_grid_image_from_batch(images, num_rows=4)
+    grid_image = utils.gen_grid_image_from_batch(images, num_rows=8)
     grid_image.save(outfile)
     print(f"Saved {num_samples} generated images to {outfile}")
 
@@ -62,9 +61,7 @@ if __name__ == "__main__":
         default=64,
         help="Maximum number of filters in the convolutional layers",
     )
-    parser.add_argument(
-        "--nsamples", type=int, default=32, help="Number of samples to generate"
-    )
+
     parser.add_argument(
         "--outfile",
         type=str,
@@ -74,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--nimg_channels",
         type=int,
-        default=3,
+        default=1,
         help="Number of image channels (1 for grayscale, 3 for RGB)",
     )
 
@@ -93,6 +90,5 @@ if __name__ == "__main__":
         args.latent_dims,
         args.nimg_channels,
         args.max_filters,
-        args.nsamples,
         args.outfile,
     )

@@ -1,11 +1,7 @@
-import math
 import os
 import tempfile
 
-import mlx.core as mx
-import numpy as np
 from mlx.data.datasets import load_mnist
-from PIL import Image
 
 import utils
 

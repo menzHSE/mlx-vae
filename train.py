@@ -14,8 +14,10 @@ import utils
 
 
 def loss_fn(model, X):
+    # Reconstruct the input images
     X_recon = model(X)
-    return loss.mse_kl_loss(X, X_recon, model.kl_div)
+    # Compute the loss between the input images and the reconstructed images
+    return loss.mse_kl_loss(X, X_recon, model.get_kl_div())
 
 
 def save_model(vae, name, epoch):
@@ -25,35 +27,41 @@ def save_model(vae, name, epoch):
 
 
 def train_epoch(model, tr_iter, loss_and_grad_fn, optimizer, epoch):
-    # set model to training mode
+    # Set model to training mode
     model.train()
 
-    # reset stats
-    running_loss = 0.0
-    throughput_list = []
+    # Reset stats
+    loss_acc = mx.array(0.0)
+    throughput_acc = mx.array(0.0)
 
-    # iterate over training batches
+    # Iterate over training batches
     for batch_count, batch in enumerate(tr_iter):
         X = mx.array(batch["image"])
 
         throughput_tic = time.perf_counter()
 
-        # forward pass + backward pass + update
+        # Forward pass + backward pass + update
         loss, grads = loss_and_grad_fn(model, X)
         optimizer.update(model, grads)
+
         # Evaluate updated model parameters
         mx.eval(model.parameters(), optimizer.state)
 
         throughput_toc = time.perf_counter()
         throughput = X.shape[0] / (throughput_toc - throughput_tic)
-        throughput_list.append(throughput)
-        running_loss += loss
+        throughput_acc += throughput
+        loss_acc += loss
 
         if batch_count > 0 and (batch_count % 10 == 0):
             print(
-                f"Epoch {epoch:4d}: Loss {(running_loss.item() / batch_count):10.2f} | "
-                f"Throughput {throughput:8.2f} im/s | ",
-                f"Batch {batch_count:5d}",
+                " | ".join(
+                    [
+                        f"Epoch {epoch:4d}",
+                        f"Loss {loss.item():10.2f}",
+                        f"Throughput {throughput:8.2f} im/s",
+                        f"Batch {batch_count:5d}",
+                    ]
+                ),
                 end="\r",
             )
 
@@ -61,11 +69,11 @@ def train_epoch(model, tr_iter, loss_and_grad_fn, optimizer, epoch):
 
         #### end of loop over training batches ####
 
-    return running_loss, throughput_list, batch_count
+    return loss_acc, throughput_acc, batch_count
 
 
 def train(batch_size, num_epochs, learning_rate, num_latent_dims, max_num_filters):
-    # Load the training and test data
+    # Load the data
     img_size = (64, 64)
     tr_iter, _, num_img_channels = dataset.mnist(
         batch_size=batch_size, img_size=img_size
@@ -78,37 +86,37 @@ def train(batch_size, num_epochs, learning_rate, num_latent_dims, max_num_filter
     mx.eval(vae.parameters())
     print("Number of trainable params: {:0.04f} M".format(vae.num_params() / 1e6))
 
-    # loss and optimizer
+    # Loss and optimizer
     loss_and_grad_fn = nn.value_and_grad(vae, loss_fn)
     optimizer = optim.AdamW(learning_rate=learning_rate)
 
-    # file name to save model every epoch
+    # File name to save model every epoch
     fname_save_every_epoch = f"models/vae_mnist_filters_{vae.max_num_filters:04d}_dims_{vae.num_latent_dims:04d}"
 
-    print("Starting training ...")
-
     for e in range(num_epochs):
-        # reset iterators and stats at the beginning of each epoch
+        # Reset iterators and stats at the beginning of each epoch
         tr_iter.reset()
 
-        # train one epoch
+        # Train one epoch
         tic = time.perf_counter()
-        running_loss, throughput_list, batch_count = train_epoch(
+        loss_acc, throughput_acc, batch_count = train_epoch(
             vae, tr_iter, loss_and_grad_fn, optimizer, e
         )
         toc = time.perf_counter()
 
-        # calculate throughput
-        samples_per_sec = mx.mean(mx.array(throughput_list))
-
-        # print stats
+        # Print stats
         print(
-            f"Epoch {e:4d}: Loss {(running_loss.item() / batch_count):10.2f} | "
-            f"Throughput {samples_per_sec.item():8.2f} im/s | ",
-            f"Time {toc - tic:8.1f} (s)",
+            " | ".join(
+                [
+                    f"Epoch {e:4d}",
+                    f"Loss {(loss_acc.item() / batch_count):10.2f}",
+                    f"Throughput {(throughput_acc.item() / batch_count):8.2f} im/s",
+                    f"Time {toc - tic:8.1f} (s)",
+                ]
+            )
         )
 
-        # save model in every epoch
+        # Save model in every epoch
         save_model(vae, fname_save_every_epoch, e)
 
 
@@ -131,9 +139,9 @@ if __name__ == "__main__":
         help="Maximum number of filters in the convolutional layers",
     )
     parser.add_argument(
-        "--epochs", type=int, default=100, help="Number of training epochs"
+        "--epochs", type=int, default=50, help="Number of training epochs"
     )
-    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
 
     parser.add_argument(
         "--latent_dims",
