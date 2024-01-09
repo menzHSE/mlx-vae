@@ -2,7 +2,7 @@
 
 ## About
 
-Convolutional variational autoencoder (CVAE) implementation in MLX using MNIST. This is a minimal example ported from the [torch-vae](https://github.com/menzHSE/torch-vae) repo. 
+Convolutional variational autoencoder (CVAE) implementation in MLX using MNIST. This is a minimal example ported from the [torch-vae](https://github.com/menzHSE/torch-vae) repo and also submitted to [mlx-examples](https://github.com/ml-explore/mlx-examples) in [PR#264](https://github.com/ml-explore/mlx-examples/pull/264). 
 
 
 ## Variational Autoencoder Implementation Overview
@@ -47,7 +47,7 @@ At the time of writing, ```mlx``` does not have tranposed 2D convolutional layer
 
 ### Model Training
 
-Pretrained (small) models  are available in the ```models``` directory. The models carry information of the maximum number of filters in the conv layers (```--max_filters```) and the number of latent dimensions (```--latent_dims```) in their filename. These models use three conv layers with 16/32/64 features (and corresponding upsampling conv layers in the decoder) and 8 latent dimensions. To train a VAE model use ```python train.py```. 
+Pretrained (small) models  are available in the ```pretrained``` directory. The models carry information of the maximum number of filters in the conv layers (```--max_filters```) and the number of latent dimensions (```--latent_dims```) in their filename. These models use three conv layers with 16/32/64 features (and corresponding upsampling conv layers in the decoder) and 8 latent dimensions. To train a VAE model use ```python train.py```. 
 
 ```
 $ python train.py -h
@@ -56,7 +56,7 @@ usage: train.py [-h] [--cpu] [--seed SEED] [--batchsize BATCHSIZE] [--max_filter
 
 options:
   -h, --help            show this help message and exit
-  --cpu                 Use CPU instead of GPU (cuda/mps) acceleration
+  --cpu                 Use CPU instead of GPU acceleration
   --seed SEED           Random seed
   --batchsize BATCHSIZE
                         Batch size for training
@@ -101,7 +101,7 @@ usage: reconstruct.py [-h] [--cpu] --model MODEL [--rec_testdata] --latent_dims 
 
 options:
   -h, --help            show this help message and exit
-  --cpu                 Use CPU instead of GPU (cuda/mps) acceleration
+  --cpu                 Use CPU instead of GPU acceleration
   --model MODEL         Model filename *.pth
   --rec_testdata        Reconstruct test split instead of training split
   --latent_dims LATENT_DIMS
@@ -134,7 +134,7 @@ usage: generate.py [-h] [--cpu] [--seed SEED] --model MODEL --latent_dims LATENT
 
 options:
   -h, --help            show this help message and exit
-  --cpu                 Use CPU instead of GPU (cuda/mps) acceleration
+  --cpu                 Use CPU instead of GPU acceleration
   --seed SEED           Random seed
   --model MODEL         Model filename *.pth
   --latent_dims LATENT_DIMS

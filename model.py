@@ -1,9 +1,10 @@
 import math
-import os
 
 import mlx.core as mx
 import mlx.nn as nn
 from mlx.utils import tree_flatten
+
+import utils
 
 
 # from https://github.com/ml-explore/mlx-examples/blob/main/stable_diffusion/stable_diffusion/unet.py
@@ -118,7 +119,6 @@ class Encoder(nn.Module):
         # with mean mu and standard deviation sigma. Backpropagation is possible
         # because the gradients of the random values are just 1 and the gradients
         # of the linear transformation are just the weights of the linear transformation.
-
         z = eps * sigma + mu
 
         # compute KL divergence
@@ -188,7 +188,7 @@ class Decoder(nn.Module):
 
 
 class CVAE(nn.Module):
-    """A convolutional Variational Autoencoder consisting of an encoder and a decoder."""
+    """A convolutional variational autoencoder consisting of an encoder and a decoder."""
 
     def __init__(self, num_latent_dims, num_img_channels, max_num_filters):
         super().__init__()
@@ -220,15 +220,8 @@ class CVAE(nn.Module):
         return nparams
 
     def save(self, fname):
-        # Extract the directory path from the file name
-        dir_path = os.path.dirname(fname)
-
-        # Check if the directory path is not empty
-        if dir_path:
-            # Check if the directory exists, and create it if it does not
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path, exist_ok=True)
-
+        # ensure the directory exists
+        utils.ensure_folder_exists(fname)
         # save the model weights
         self.save_weights(fname)
 
